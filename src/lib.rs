@@ -30,26 +30,42 @@ for less or more logging.
 #![doc = include_str!("../tests/simple.rs")]
 #![doc = "\n```"]
 
-mod macros;
-
-pub mod tutorials;
-
-mod dot;
+// "Lite" version of library: just the core data structure, please!
 mod eclass;
 mod egraph;
-mod explain;
-mod extract;
 mod language;
-#[cfg(feature = "lp")]
-mod lp_extract;
-mod machine;
-mod multipattern;
-mod pattern;
-mod rewrite;
-mod run;
-mod subst;
+mod macros;
 mod unionfind;
 mod util;
+
+// "Standard" modules: included by default, because the `standard`
+// feature is on by default, but an embedder can use egg with
+// `default-features = false` if desired for a lightweight,
+// dependency-free build.
+
+#[cfg(feature = "standard")]
+pub mod tutorials;
+
+#[cfg(feature = "standard")]
+mod dot;
+#[cfg(feature = "standard")]
+mod explain;
+#[cfg(feature = "standard")]
+mod extract;
+#[cfg(feature = "lp")]
+mod lp_extract;
+#[cfg(feature = "standard")]
+mod machine;
+#[cfg(feature = "standard")]
+mod multipattern;
+#[cfg(feature = "standard")]
+mod pattern;
+#[cfg(feature = "standard")]
+mod rewrite;
+#[cfg(feature = "standard")]
+mod run;
+#[cfg(feature = "standard")]
+mod subst;
 
 /// A key to identify [`EClass`]es within an
 /// [`EGraph`].
@@ -82,21 +98,21 @@ impl std::fmt::Display for Id {
     }
 }
 
-pub(crate) use {explain::Explain, explain::Justification, unionfind::UnionFind};
+pub use {eclass::EClass, egraph::EGraph, language::*, unionfind::UnionFind, util::*};
 
+#[cfg(feature = "standard")]
+pub(crate) use explain::Explain;
+
+#[cfg(feature = "standard")]
 pub use {
     dot::Dot,
-    eclass::EClass,
-    egraph::EGraph,
     explain::{Explanation, FlatExplanation, FlatTerm, TreeExplanation, TreeTerm},
     extract::*,
-    language::*,
     multipattern::*,
     pattern::{ENodeOrVar, Pattern, PatternAst, SearchMatches},
     rewrite::{Applier, Condition, ConditionEqual, ConditionalApplier, Rewrite, Searcher},
     run::*,
     subst::{Subst, Var},
-    util::*,
 };
 
 #[cfg(feature = "lp")]
@@ -108,4 +124,5 @@ fn init_logger() {
 }
 
 #[doc(hidden)]
+#[cfg(feature = "standard")]
 pub mod test;

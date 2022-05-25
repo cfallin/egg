@@ -1,10 +1,19 @@
 use std::fmt;
+#[cfg(feature = "standard")]
 use symbolic_expressions::Sexp;
 
 use fmt::{Debug, Display, Formatter};
 
 #[allow(unused_imports)]
 use crate::*;
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde-1", derive(serde::Serialize, serde::Deserialize))]
+pub(crate) enum Justification {
+    #[cfg(feature = "standard")]
+    Rule(Symbol),
+    Congruence,
+}
 
 /// An interned string.
 ///
@@ -37,6 +46,7 @@ use crate::*;
 /// assert_ne!(Symbol::from("foo"), Symbol::from("bar"));
 /// ```
 ///
+#[cfg(feature = "standard")]
 pub use symbol_table::GlobalSymbol as Symbol;
 
 pub(crate) type BuildHasher = fxhash::FxBuildHasher;
@@ -47,7 +57,9 @@ pub(crate) type HashSet<K> = hashbrown::HashSet<K, BuildHasher>;
 pub(crate) type IndexMap<K, V> = indexmap::IndexMap<K, V, BuildHasher>;
 pub(crate) type IndexSet<K> = indexmap::IndexSet<K, BuildHasher>;
 
+#[cfg(feature = "standard")]
 pub(crate) type Instant = instant::Instant;
+#[cfg(feature = "standard")]
 pub(crate) type Duration = instant::Duration;
 
 pub(crate) fn concat_vecs<T>(to: &mut Vec<T>, mut from: Vec<T>) {
@@ -57,6 +69,7 @@ pub(crate) fn concat_vecs<T>(to: &mut Vec<T>, mut from: Vec<T>) {
     to.extend(from);
 }
 
+#[cfg(feature = "standard")]
 pub(crate) fn pretty_print(
     buf: &mut String,
     sexp: &Sexp,

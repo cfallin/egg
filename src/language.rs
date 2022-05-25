@@ -9,7 +9,9 @@ use std::{hash::Hash, str::FromStr};
 use crate::*;
 
 use fmt::Formatter;
+#[cfg(feature = "standard")]
 use symbolic_expressions::{Sexp, SexpError};
+#[cfg(feature = "standard")]
 use thiserror::Error;
 
 /// Trait that defines a Language whose terms will be in the [`EGraph`].
@@ -264,6 +266,7 @@ pub trait FromOp: Language + Sized {
 /// A generic error for failing to parse an operator. This is the error type
 /// used by [`define_language!`] for [`FromOp::Error`], and is a sensible choice
 /// when implementing [`FromOp`] manually.
+#[cfg(feature = "standard")]
 #[derive(Debug, Error)]
 #[error("could not parse an e-node with operator {op:?} and children {children:?}")]
 pub struct FromOpError {
@@ -271,7 +274,12 @@ pub struct FromOpError {
     children: Vec<Id>,
 }
 
+#[cfg(not(feature = "standard"))]
+#[derive(Debug)]
+pub struct FromOpError;
+
 impl FromOpError {
+    #[cfg(feature = "standard")]
     /// Create a new `FromOpError` representing a failed call
     /// `FromOp::from_op(op, children)`.
     pub fn new(op: &str, children: Vec<Id>) -> Self {
@@ -279,6 +287,11 @@ impl FromOpError {
             op: op.to_owned(),
             children,
         }
+    }
+
+    #[cfg(not(feature = "standard"))]
+    pub fn new(_: &str, _: Vec<Id>) -> Self {
+        FromOpError
     }
 }
 
@@ -454,6 +467,7 @@ impl<L: Language> IndexMut<Id> for RecExpr<L> {
     }
 }
 
+#[cfg(feature = "standard")]
 impl<L: Language + Display> Display for RecExpr<L> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.nodes.is_empty() {
@@ -465,6 +479,7 @@ impl<L: Language + Display> Display for RecExpr<L> {
     }
 }
 
+#[cfg(feature = "standard")]
 impl<L: Language + Display> RecExpr<L> {
     fn to_sexp(&self) -> Sexp {
         let last = self.nodes.len() - 1;
@@ -519,6 +534,7 @@ impl<L: Language + Display> RecExpr<L> {
 
 /// An error type for failures when attempting to parse an s-expression as a
 /// [`RecExpr<L>`].
+#[cfg(feature = "standard")]
 #[derive(Debug, Error)]
 pub enum RecExprParseError<E> {
     /// An empty s-expression was found. Usually this is caused by an
@@ -541,6 +557,7 @@ pub enum RecExprParseError<E> {
     BadSexp(SexpError),
 }
 
+#[cfg(feature = "standard")]
 impl<L: FromOp> FromStr for RecExpr<L> {
     type Err = RecExprParseError<L::Error>;
 
@@ -769,6 +786,7 @@ pub fn merge_min<T: Ord>(to: &mut T, from: T) -> DidMerge {
     }
 }
 /// A simple language used for testing.
+#[cfg(feature = "standard")]
 #[derive(Debug, Hash, PartialEq, Eq, Clone, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde-1", derive(serde::Serialize, serde::Deserialize))]
 pub struct SymbolLang {
@@ -778,6 +796,7 @@ pub struct SymbolLang {
     pub children: Vec<Id>,
 }
 
+#[cfg(feature = "standard")]
 impl SymbolLang {
     /// Create an enode with the given string and children
     pub fn new(op: impl Into<Symbol>, children: Vec<Id>) -> Self {
@@ -791,6 +810,7 @@ impl SymbolLang {
     }
 }
 
+#[cfg(feature = "standard")]
 impl Language for SymbolLang {
     fn matches(&self, other: &Self) -> bool {
         self.op == other.op && self.len() == other.len()
@@ -805,12 +825,14 @@ impl Language for SymbolLang {
     }
 }
 
+#[cfg(feature = "standard")]
 impl Display for SymbolLang {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.op, f)
     }
 }
 
+#[cfg(feature = "standard")]
 impl FromOp for SymbolLang {
     type Error = Infallible;
 

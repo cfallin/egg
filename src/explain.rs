@@ -1,19 +1,12 @@
 use crate::Symbol;
 use crate::{
-    util::pretty_print, Analysis, ENodeOrVar, HashMap, HashSet, Id, Language, PatternAst, Rewrite,
-    Var,
+    util::pretty_print, Analysis, ENodeOrVar, HashMap, HashSet, Id, Justification, Language,
+    PatternAst, Rewrite, Var,
 };
 use std::fmt::{self, Debug, Display, Formatter};
 use std::rc::Rc;
 
 use symbolic_expressions::Sexp;
-
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde-1", derive(serde::Serialize, serde::Deserialize))]
-pub(crate) enum Justification {
-    Rule(Symbol),
-    Congruence,
-}
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde-1", derive(serde::Serialize, serde::Deserialize))]

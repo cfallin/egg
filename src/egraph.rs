@@ -5,8 +5,9 @@ use std::{
 };
 
 #[cfg(feature = "serde-1")]
-use ::serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "standard")]
 use log::*;
 
 /** A data structure to keep track of equalities between expressions.
@@ -55,6 +56,7 @@ pub struct EGraph<L: Language, N: Analysis<L>> {
     /// The `Analysis` given when creating this `EGraph`.
     pub analysis: N,
     /// The `Explain` used to explain equivalences in this `EGraph`.
+    #[cfg(feature = "standard")]
     pub(crate) explain: Option<Explain<L>>,
     unionfind: UnionFind,
     /// Stores each enode's `Id`, not the `Id` of the eclass.
@@ -115,6 +117,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
             classes: Default::default(),
             unionfind: Default::default(),
             clean: false,
+            #[cfg(feature = "standard")]
             explain: None,
             pending: Default::default(),
             memo: Default::default(),
@@ -179,6 +182,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     /// Enable explanations for this `EGraph`.
     /// This allows the egraph to explain why two expressions are
     /// equivalent with the [`explain_equivalence`](EGraph::explain_equivalence) function.
+    #[cfg(feature = "standard")]
     pub fn with_explanations_enabled(mut self) -> Self {
         if self.explain.is_some() {
             return self;
@@ -191,12 +195,14 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     }
 
     /// Disable explanations for this `EGraph`.
+    #[cfg(feature = "standard")]
     pub fn with_explanations_disabled(mut self) -> Self {
         self.explain = None;
         self
     }
 
     /// Check if explanations are enabled.
+    #[cfg(feature = "standard")]
     pub fn are_explanations_enabled(&self) -> bool {
         self.explain.is_some()
     }
@@ -207,6 +213,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     /// The [`Explanation`] can be used in it's default tree form or in a less compact
     /// flattened form. Each of these also has a s-expression string representation,
     /// given by [`get_flat_string`](Explanation::get_flat_string) and [`get_string`](Explanation::get_string).
+    #[cfg(feature = "standard")]
     pub fn explain_equivalence(&mut self, left: &RecExpr<L>, right: &RecExpr<L>) -> Explanation<L> {
         let left = self.add_expr_internal(left);
         let right = self.add_expr_internal(right);
@@ -225,6 +232,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     /// into the egraph and ends with the given `expr`.
     /// Note that this function can be called again to explain any intermediate terms
     /// used in the output [`Explanation`].
+    #[cfg(feature = "standard")]
     pub fn explain_existance(&mut self, expr: &RecExpr<L>) -> Explanation<L> {
         let id = self.add_expr_internal(expr);
         if let Some(explain) = &mut self.explain {
@@ -235,6 +243,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     }
 
     /// Return an [`Explanation`] for why a pattern appears in the egraph.
+    #[cfg(feature = "standard")]
     pub fn explain_existance_pattern(
         &mut self,
         pattern: &PatternAst<L>,
@@ -249,6 +258,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     }
 
     /// Get an explanation for why an expression matches a pattern.
+    #[cfg(feature = "standard")]
     pub fn explain_matches(
         &mut self,
         left: &RecExpr<L>,
@@ -292,7 +302,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     }
 
     /// Creates a [`Dot`] to visualize this egraph. See [`Dot`].
-    ///
+    #[cfg(feature = "standard")]
     pub fn dot(&self) -> Dot<L, N> {
         Dot {
             egraph: self,
@@ -358,6 +368,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
             } else {
                 new_node_q.push(false);
             }
+            #[cfg(feature = "standard")]
             if let Some(explain) = &mut self.explain {
                 node.for_each(|child| {
                     // Set the existance reason for new nodes to their parent node.
@@ -373,11 +384,13 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
 
     /// Adds a [`Pattern`] and a substitution to the [`EGraph`], returning
     /// the eclass of the instantiated pattern.
+    #[cfg(feature = "standard")]
     pub fn add_instantiation(&mut self, pat: &PatternAst<L>, subst: &Subst) -> Id {
         let id = self.add_instantiation_internal(pat, subst);
         self.find(id)
     }
 
+    #[cfg(feature = "standard")]
     fn add_instantiation_internal(&mut self, pat: &PatternAst<L>, subst: &Subst) -> Id {
         let nodes = pat.as_ref();
         let mut new_ids = Vec::with_capacity(nodes.len());
@@ -497,6 +510,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
         if let Some(existing_id) = self.lookup_internal(&mut enode) {
             let id = self.find(existing_id);
             // when explanations are enabled, we need a new representative for this expr
+            #[cfg(feature = "standard")]
             if let Some(explain) = self.explain.as_mut() {
                 if let Some(existing_explain) = explain.uncanon_memo.get(&original) {
                     *existing_explain
@@ -510,8 +524,11 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
             } else {
                 existing_id
             }
+            #[cfg(not(feature = "standard"))]
+            existing_id
         } else {
             let id = self.make_new_eclass(enode);
+            #[cfg(feature = "standard")]
             if let Some(explain) = self.explain.as_mut() {
                 explain.add(original, id, id);
             }
@@ -526,6 +543,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     /// This function makes a new eclass in the egraph (but doesn't touch explanations)
     fn make_new_eclass(&mut self, enode: L) -> Id {
         let id = self.unionfind.make_set();
+        #[cfg(feature = "standard")]
         log::trace!("  ...adding to {}", id);
         let class = EClass {
             id,
@@ -553,6 +571,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     /// Returns a list of id where both expression are represented.
     /// In most cases, there will none or exactly one id.
     ///
+    #[cfg(feature = "standard")]
     pub fn equivs(&self, expr1: &RecExpr<L>, expr2: &RecExpr<L>) -> Vec<Id> {
         let pat1 = Pattern::from(expr1.as_ref());
         let pat2 = Pattern::from(expr2.as_ref());
@@ -583,6 +602,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     ///
     /// Returns the id of the new eclass, along with
     /// a `bool` indicating whether a union occured.
+    #[cfg(feature = "standard")]
     pub fn union_instantiations(
         &mut self,
         from_pat: &PatternAst<L>,
@@ -617,6 +637,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
     ///
     ///
     pub fn union(&mut self, id1: Id, id2: Id) -> bool {
+        #[cfg(feature = "standard")]
         if self.explain.is_some() {
             panic!("Use union_instantiations when explanation mode is enabled.");
         }
@@ -645,6 +666,7 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
 
         N::pre_union(self, id1, id2);
 
+        #[cfg(feature = "standard")]
         if let Some(explain) = &mut self.explain {
             explain.union(enode_id1, enode_id2, rule.unwrap(), any_new_rhs);
         }
@@ -690,6 +712,7 @@ impl<L: Language + Display, N: Analysis<L>> EGraph<L, N> {
     /// Panic if the given eclass doesn't contain the given patterns
     ///
     /// Useful for testing.
+    #[cfg(feature = "standard")]
     pub fn check_goals(&self, id: Id, goals: &[Pattern<L>]) {
         let (cost, best) = Extractor::new(self, AstSize).find_best(id);
         println!("End ({}): {}", cost, best.pretty(80));
@@ -878,34 +901,39 @@ impl<L: Language, N: Analysis<L>> EGraph<L, N> {
         let old_hc_size = self.memo.len();
         let old_n_eclasses = self.number_of_classes();
 
+        #[cfg(feature = "standard")]
         let start = Instant::now();
 
         let n_unions = self.process_unions();
         let trimmed_nodes = self.rebuild_classes();
 
-        let elapsed = start.elapsed();
-        info!(
-            concat!(
-                "REBUILT! in {}.{:03}s\n",
-                "  Old: hc size {}, eclasses: {}\n",
-                "  New: hc size {}, eclasses: {}\n",
-                "  unions: {}, trimmed nodes: {}"
-            ),
-            elapsed.as_secs(),
-            elapsed.subsec_millis(),
-            old_hc_size,
-            old_n_eclasses,
-            self.memo.len(),
-            self.number_of_classes(),
-            n_unions,
-            trimmed_nodes,
-        );
+        #[cfg(feature = "standard")]
+        {
+            let elapsed = start.elapsed();
+            info!(
+                concat!(
+                    "REBUILT! in {}.{:03}s\n",
+                    "  Old: hc size {}, eclasses: {}\n",
+                    "  New: hc size {}, eclasses: {}\n",
+                    "  unions: {}, trimmed nodes: {}"
+                ),
+                elapsed.as_secs(),
+                elapsed.subsec_millis(),
+                old_hc_size,
+                old_n_eclasses,
+                self.memo.len(),
+                self.number_of_classes(),
+                n_unions,
+                trimmed_nodes,
+            );
+        }
 
         debug_assert!(self.check_memo());
         self.clean = true;
         n_unions
     }
 
+    #[cfg(feature = "standard")]
     pub(crate) fn check_each_explain(&self, rules: &[&Rewrite<L, N>]) -> bool {
         if let Some(explain) = &self.explain {
             explain.check_each_explain(rules)
