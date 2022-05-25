@@ -276,7 +276,10 @@ pub struct FromOpError {
 
 #[cfg(not(feature = "standard"))]
 #[derive(Debug)]
-pub struct FromOpError;
+pub struct FromOpError {
+    /// Prevent construction outside this crate by adding a private field.
+    _empty: (),
+}
 
 impl FromOpError {
     #[cfg(feature = "standard")]
@@ -291,7 +294,7 @@ impl FromOpError {
 
     #[cfg(not(feature = "standard"))]
     pub fn new(_: &str, _: Vec<Id>) -> Self {
-        FromOpError
+        FromOpError { _empty: () }
     }
 }
 
